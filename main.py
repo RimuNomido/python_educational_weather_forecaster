@@ -1,5 +1,5 @@
 from forecaster import WeatherUtilities, ApiConn, YANDEX_ACCESS_KEY, YANDEX_URL
-from utils import Parser, Displayer
+from utils import Parser, display_all_data
 from typing import Annotated
 import typer
 
@@ -26,8 +26,7 @@ def main(city: Annotated[str, typer.Option('-c', '--city', help='Город дл
         print('Ошибка обработки данных.')
         return
 
-    displayer = Displayer(parsed_data, parsed_city)
-    displayer.display_weather()
+    display_all_data(parsed_data, city)
 
 if __name__ == '__main__':
     typer.run(main)
