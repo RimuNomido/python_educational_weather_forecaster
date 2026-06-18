@@ -20,24 +20,6 @@
 
 ---
 
-## ⚙️ Установка
-
-```bash
-git clone https://github.com/your-username/python_educational_weather_forecaster.git
-cd python_educational_weather_forecaster
-python -m venv venv
-source venv/bin/activate   # или venv\Scripts\activate для Windows
-pip install -r requirements.txt
-```
-
-Если `requirements.txt` отсутствует, установите вручную:
-
-```bash
-pip install geopy requests python-dotenv typer pymorphy3
-```
-
----
-
 ## 🔑 Ключ доступа
 
 Создайте файл `.env` в корне проекта и укажите ваш API-ключ:
