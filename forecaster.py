@@ -1,17 +1,18 @@
-import requests
-import os
 from dotenv import load_dotenv
 from geopy import Nominatim
+from exceptions import CustomResponseError
+import requests
+import os
 
 load_dotenv()
 
 class WeatherForecaster:
-    def __init__(self, city = 'Moscow'):
+    def __init__(self, city: str = 'Moscow'):
         self.url = 'https://api.weather.yandex.ru/graphql/query'
         self.access_key = os.environ.get('access_key')
         self.city = city
     
-    def get_coords(self):
+    def get_coords(self) -> tuple[int, int]:
         geolocator = Nominatim(user_agent='rimunomido')
         loc = geolocator.geocode(self.city)
         lat = loc.latitude
@@ -20,7 +21,7 @@ class WeatherForecaster:
 
         return (lat, lon)
         
-    def get_weather(self):
+    def get_weather(self) -> dict:
         headers = {'X-Yandex-Weather-Key': self.access_key}
         coords = self.get_coords()
         query = """
@@ -45,6 +46,13 @@ class WeatherForecaster:
             "lon": coords[1]
 
         }
-        response = requests.post(self.url, headers=headers, json={'query': query, 'variables': variables})
+        try:
+
+            response = requests.post(self.url, headers=headers, json={'query': query, 'variables': variables})
+
+            if response.status_code != 200:
+                raise CustomResponseError(f'Сервер вернул код {response.status_code}', response.status_code)
+        except CustomResponseError as e:
+            print('Произошла непредвиденная ошибка сети -> ', {e})
 
         return response.json()
