@@ -8,15 +8,18 @@ class Parser:
     
     def parse_json(self) -> SimpleNamespace:
         json = self.response
-        weather = json['data']['weatherByPoint']['now']
-        data = SimpleNamespace(**weather)
-
-        return data
+        try:
+            weather = json['data']['weatherByPoint']['now']
+            return SimpleNamespace(**weather)
+        except (KeyError, TypeError):
+            return None
     
     def parse_city_name(self):
         morph = pymorphy3.MorphAnalyzer()
         parsed_word = morph.parse(self.city)[0]
         declined_word = parsed_word.inflect({'loct'})
+        if declined_word is None:
+            return self.city
         city = declined_word.word.capitalize()
         return city
     

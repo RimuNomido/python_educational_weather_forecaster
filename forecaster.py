@@ -1,29 +1,38 @@
-from dotenv import load_dotenv
 from geopy import Nominatim
-from exceptions import CustomResponseError
+from dotenv import load_dotenv
 import requests
 import os
 
 load_dotenv()
+YANDEX_URL = 'https://api.weather.yandex.ru/graphql/query'
+YANDEX_ACCESS_KEY = os.environ.get('access_key')
 
-class WeatherForecaster:
-    def __init__(self, city: str = 'Moscow'):
-        self.url = 'https://api.weather.yandex.ru/graphql/query'
-        self.access_key = os.environ.get('access_key')
+class WeatherUtilities:
+    def __init__(self, city: str):
         self.city = city
     
-    def get_coords(self) -> tuple[int, int]:
+    def get_coords(self) -> tuple[float, float] | None:
         geolocator = Nominatim(user_agent='rimunomido')
         loc = geolocator.geocode(self.city)
+
+        if loc is None:
+            print('Город не найден. Проверьте название.')
+            return None
+    
         lat = loc.latitude
         lon = loc.longitude
         self.lat, self.lon = lat, lon
 
         return (lat, lon)
-        
-    def get_weather(self) -> dict:
-        headers = {'X-Yandex-Weather-Key': self.access_key}
-        coords = self.get_coords()
+
+class ApiConn:
+    def __init__(self, url: str, access_key: str):
+        self.url = url
+        self.access_key = access_key
+        self.headers = {'X-Yandex-Weather-Key': self.access_key}
+    
+    # Возвращает словарь из нескольких подсловарей.
+    def send_request(self, coords: tuple[float, float]) -> dict | None:
         query = """
         query GetWeather($lat: Float!, $lon: Float!) {
             weatherByPoint(request: { lat: $lat, lon: $lon }) {
@@ -44,15 +53,16 @@ class WeatherForecaster:
         variables = {
             "lat": coords[0],
             "lon": coords[1]
-
         }
+
         try:
+            response = requests.post(self.url, headers=self.headers, json={'query': query, 'variables': variables}, timeout=5)
+            response.raise_for_status()
 
-            response = requests.post(self.url, headers=headers, json={'query': query, 'variables': variables})
-
-            if response.status_code != 200:
-                raise CustomResponseError(f'Сервер вернул код {response.status_code}', response.status_code)
-        except CustomResponseError as e:
-            print('Произошла непредвиденная ошибка сети -> ', {e})
-
-        return response.json()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f'Ошибка сети: {e}')
+            return None
+        except ValueError as e:
+            print(f'Ошибка парсинга JSON: {e}')
+            return None
